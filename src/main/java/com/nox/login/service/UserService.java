@@ -1,5 +1,8 @@
 package com.nox.login.service;
 
+import com.nox.login.entity.Password;
+import com.nox.login.entity.User;
+import com.nox.login.excepciones.RecursoNoEncontradoExcepcion;
 import com.nox.login.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,6 +13,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+
+import static org.apache.logging.log4j.util.Strings.isBlank;
 
 /**
  * Aquí vamos a desarrollar la logic del usuario, el cual le vamos a implementar validaciones y ver que mas
@@ -87,6 +92,7 @@ public class UserService implements IUserService, UserDetailsService
      * @param passwordIngresado
      * @return
      */
+    //!En peligro, este metodo se ira pronto
     public boolean login(String email, String passwordIngresado)
     {
         com.nox.login.entity.User user = userRepository.findByEmail(email).orElse(null);
@@ -99,7 +105,33 @@ public class UserService implements IUserService, UserDetailsService
         return passwordEncoder.matches(passwordIngresado, user.getPasswordHash());
     }
 
+    /**
+     * Actualizar el usuario NUEVO
+     */
+    public User actualizarUsuario(Long id, User userRecibido)
+    {
+        User userExistente = userRepository.findById(id)
+                .orElseThrow(() ->
+                new RecursoNoEncontradoExcepcion("No se encontró el usuario id: " + id)
+        );
 
+        //Actualizamos campos permitidos
+        userExistente.setUserName(userRecibido.getUserName());
+        userExistente.setEmail(userRecibido.getEmail());
+
+        //si se enviá nueva password, se cifra y remplaza
+        if(userRecibido.getPassword() != null &&
+        userRecibido.getPassword().getHash() != null &&
+        !userRecibido.getPassword().getHash().isBlank())
+        {
+            Password nuevaPassword = passwordService.crearPasswordParaUsuario(
+                    userExistente,
+                    userRecibido.getPassword().getHash()
+            );
+            userExistente.setPassword(nuevaPassword);
+        }
+        return userRepository.save(userExistente);
+    }
     // =======================================
     //    Integración con Spring Security
     // =======================================
@@ -140,5 +172,20 @@ public class UserService implements IUserService, UserDetailsService
                 user.getPasswordHash(),
                 Collections.emptyList()
         );
+    }
+
+    /**
+     * Logica del password NUEVO
+     */
+    public User crearUsuario(User user)
+    {
+        if(user.getPassword() != null && user.getPassword().getHash() != null)
+        {
+            Password password = passwordService.crearPasswordParaUsuario(
+                    user, user.getPassword().getHash()
+            );
+            user.setPassword(password);
+        }
+        return userRepository.save(user);
     }
 }

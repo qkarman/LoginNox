@@ -1,0 +1,135 @@
+@startuml
+skinparam style strictuml
+skinparam classAttributeIconSize 0
+
+title Arquitectura Spring Security + JWT + PasswordService (Biomimético Ready)
+
+' ===========================
+'        ENTIDADES
+' ===========================
+
+class User {
+  +Long idUser
+  +String email
+  +String userName
+  +String passwordHash
+}
+
+class Password {
+  +Long idPassword
+  +String hash
+  +LocalDate dateCreation
+  +boolean expirada
+}
+
+User "1" -- "1" Password : OneToOne
+
+
+' ===========================
+'        REPOSITORIOS
+' ===========================
+
+interface UserRepository {
+  +findByEmail(String): Optional<User>
+  +existsByEmail(String): boolean
+}
+
+interface PasswordRepository {
+  +findByUser(User): Password
+}
+
+
+' ===========================
+'        SERVICIOS
+' ===========================
+
+class UserService {
+  +loadUserByUsername(email): UserDetails
+  +guardarUser(User)
+  +buscarUserId(id): User
+}
+
+class PasswordService {
+  -validarFortalezaPassword(pwd)
+  +crearPasswordParaUsuario(User, pwdHash)
+  +aplicarAlgoritmoBiomimetico()  <<-- AQUI ENTRA TU ALGORITMO
+}
+
+class JwtUtil {
+  +generarToken(email): String
+  +validarToken(token): boolean
+  +obtenerEmailDelToken(token): String
+}
+
+class EncoderConfig {
+  +passwordEncoder(): BCryptPasswordEncoder
+}
+
+
+' ===========================
+'        SEGURIDAD
+' ===========================
+
+class JwtFilter {
+  +doFilterInternal()
+}
+
+class SecurityConfig {
+  +securityFilterChain(HttpSecurity)
+  +authenticationManager()
+}
+
+interface UserDetailsService {
+  +loadUserByUsername(email)
+}
+
+
+' ===========================
+'        CONTROLADORES
+' ===========================
+
+class AuthController {
+  +login(LoginRequestDTO)
+  +register(User)
+}
+
+class UserController {
+  +obtenerUsers()
+  +agregarUser(User)
+  +obtenerUserId(id)
+  +actualizarUser(id, User)
+  +eliminarUser(id)
+}
+
+
+' ===========================
+'        RELACIONES
+' ===========================
+
+' Controladores
+AuthController --> UserService
+AuthController --> JwtUtil
+AuthController --> AuthenticationManager
+
+UserController --> UserService
+UserController --> PasswordService
+UserController --> UserRepository
+UserController --> PasswordRepository
+
+
+' Seguridad
+SecurityConfig --> JwtFilter
+SecurityConfig --> UserDetailsService
+SecurityConfig --> AuthenticationManager
+
+JwtFilter --> JwtUtil
+JwtFilter --> UserDetailsService
+
+UserService --> UserRepository
+UserService --> BCryptPasswordEncoder
+
+PasswordService --> PasswordRepository
+PasswordService --> BCryptPasswordEncoder
+
+
+@enduml

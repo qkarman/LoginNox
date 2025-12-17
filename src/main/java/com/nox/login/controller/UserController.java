@@ -1,6 +1,5 @@
 package com.nox.login.controller;
 
-import com.nox.login.entity.LoginRequest;
 import com.nox.login.entity.Password;
 import com.nox.login.entity.User;
 import com.nox.login.excepciones.RecursoNoEncontradoExcepcion;
@@ -44,16 +43,7 @@ public class UserController
     private UserService userService;
 
     @Autowired
-    private PasswordService passwordService; //Inyectamos el servicio de passwords
-
-    @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private PasswordRepository passwordRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
     /**
      * Obtiene todos los users registrados en la BD
@@ -76,20 +66,8 @@ public class UserController
     @PostMapping("/users")
     public User agregarUser(@RequestBody User user)
     {
-        log.info("User a agregar: " + user);
-
-        //Guardamos el usuario
-        //User nuevoUser = this.userService.guardarUser(user);
-
-        //Si el cliente enviá un campo de password.hash, lo ciframos y lo guardamos
-        if(user.getPassword() != null && user.getPassword().getHash() != null)
-        {
-            Password password = passwordService.crearPasswordParaUsuario(user, user.getPassword().getHash());
-            user.setPassword(password);
-            //this.userService.guardarUser(nuevoUser);
-        }
-
-        return this.userService.guardarUser(user);
+        log.info("User a agregar: {}",  user.getUserName());
+        return userService.crearUsuario(user);
     }
 
     /**
@@ -121,24 +99,8 @@ public class UserController
     @PutMapping("/Users/{id}")
     public ResponseEntity<User> actualizarUser(@PathVariable Long id, @RequestBody User userRecibido)
     {
-        User user = this.userService.buscarUserId(id);
-        if(user == null)
-        {
-            throw new RecursoNoEncontradoExcepcion("No se encontro el id: " + id);
-        }
-
-        user.setUserName(userRecibido.getUserName());
-        user.setEmail(userRecibido.getEmail());
-        //Si se envia una nueva password, se vuelve a cifrar
-        if(userRecibido.getPassword() != null && userRecibido.getPassword().getHash() != null)
-        {
-            Password password = passwordService.crearPasswordParaUsuario(user, userRecibido.getPassword().getHash());
-            user.setPassword(password);
-        }
-
-        //Guardamos la información
-        this.userService.guardarUser(user);
-        return ResponseEntity.ok(user);
+        User actualizado = userService.actualizarUsuario(id, userRecibido);
+        return ResponseEntity.ok(actualizado);
     }
 
     /**
