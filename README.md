@@ -310,7 +310,13 @@ NOX nació de investigar el comportamiento corvino como modelo de toma de decisi
 
 ---
 
-## Autor
+## 📄 Licencia
 
-Qkarman  
-Backend especializado en Java · Spring Boot · Backend.
+MIT — libre para uso, estudio y modificación.
+
+---
+
+## 👤 Autor
+
+Cristian Flores  
+Backend Java Developer
